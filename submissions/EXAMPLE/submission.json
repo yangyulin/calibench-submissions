@@ -1,0 +1,19 @@
+{
+  "schema_version": "1.0",
+  "tool": { "name": "Kalibr", "version": "0.14.0", "url": "https://github.com/ethz-asl/kalibr" },
+  "dataset": {
+    "repo": "calibench-vi/datasets",
+    "config": "virig-4cams",
+    "sequences": ["4imus_4cams_01", "4imus_4cams_02"],
+    "split": "real"
+  },
+  "submitter": { "name": "Jane Doe", "affiliation": "Some Lab", "contact": "jane@uni.edu", "hf_user": "janedoe" },
+  "reproduce": {
+    "command": "kalibr_calibrate_imu_camera --bag 4imus_4cams_01.bag --cam cam.yaml --imu imu.yaml --target april.yaml",
+    "commit": "abc1234",
+    "environment": "ubuntu22.04 + ros-noetic (docker: calibench/kalibr:0.14)"
+  },
+  "calibration": "outputs/calibration.yaml",
+  "acknowledge": { "license": "CC-BY-4.0", "cite": ["calibench2026"] },
+  "date": "2026-07-01"
+}

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://huggingface.co/datasets/calibench-vi/results/raw/main/schemas/submission.schema.json",
+  "title": "Calibench submission",
+  "description": "A leaderboard submission = calibration OUTPUTS + metadata. CI RE-RUNS the Calibench evaluation to compute the metrics; contributors do NOT submit scores. The calibration parameters follow the camcalib/output schema (single source of truth).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "tool", "dataset", "submitter", "calibration", "acknowledge"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string", "description": "Kalibr | CamCalib | MVIS | Basalt | OpenVINS | …" },
+        "version": { "type": "string" },
+        "url": { "type": "string", "format": "uri" }
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repo", "config", "sequences", "split"],
+      "properties": {
+        "repo": { "type": "string", "description": "calibench-vi/datasets | calibench-vi/community" },
+        "config": { "type": "string", "description": "virig-3cams | virig-4cams | euroc_mav | …" },
+        "sequences": { "type": "array", "items": { "type": "string" }, "minItems": 1,
+          "description": "exact bag/sequence ids the calibration used" },
+        "split": { "enum": ["real", "simulation"],
+          "description": "real = no absolute GT (GT-free metrics); simulation = scored vs Calibench's PRIVATE held-out GT" }
+      }
+    },
+    "submitter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "contact"],
+      "properties": {
+        "name": { "type": "string" },
+        "affiliation": { "type": "string" },
+        "contact": { "type": "string" },
+        "hf_user": { "type": "string" }
+      }
+    },
+    "reproduce": {
+      "type": "object",
+      "description": "How to reproduce the result. Required to earn the 'verified' badge.",
+      "properties": {
+        "command": { "type": "string" },
+        "commit": { "type": "string" },
+        "environment": { "type": "string", "description": "OS / deps / container image" },
+        "notes": { "type": "string" }
+      }
+    },
+    "calibration": {
+      "description": "The calibration OUTPUT(s) submitted, in the camcalib/output schema (camera + IMU intrinsics, cam-IMU R/t/dt, rolling-shutter readout, IMU-IMU R/t/dt, covariances). Provide a path to the output file(s) in the PR, or inline the object.",
+      "oneOf": [
+        { "type": "string", "description": "relative path to output YAML/JSON in the submission PR" },
+        { "type": "object", "description": "inline output-schema-conformant object" }
+      ]
+    },
+    "acknowledge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["license", "cite"],
+      "properties": {
+        "license": { "const": "CC-BY-4.0",
+          "description": "submitter relicenses the submission contents under CC-BY-4.0" },
+        "cite": { "type": "array", "items": { "type": "string" }, "minItems": 1,
+          "description": "BibTeX keys the submitter agrees to cite (Calibench + the dataset used)" }
+      }
+    },
+    "date": { "type": "string", "format": "date" }
+  }
+}

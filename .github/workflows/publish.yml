@@ -1,0 +1,30 @@
+name: publish-results
+on:
+  push:
+    branches: [main]
+    paths: ["submissions/**"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install jsonschema referencing huggingface_hub
+      - name: Evaluate + publish changed submissions
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          changed=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep 'submission.json' || true)
+          if [ -z "$changed" ]; then echo "no changed submissions"; exit 0; fi
+          for s in $changed; do
+            echo "::group::publish $s"
+            python scripts/validate.py "$s"
+            python scripts/evaluate.py "$s"
+            python scripts/publish.py result.json
+            echo "::endgroup::"
+          done

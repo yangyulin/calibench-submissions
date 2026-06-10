@@ -1,0 +1,21 @@
+name: validate-submission
+on:
+  pull_request:
+    paths: ["submissions/**"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install jsonschema referencing
+      - name: Validate submission schema + files
+        run: python scripts/validate.py
+      - name: Dry-run evaluate (scaffold — produces result.json, does not publish)
+        run: |
+          for s in $(git -c core.quotepath=false diff --name-only origin/${{ github.base_ref }}...HEAD | grep 'submission.json' || true); do
+            echo "::group::evaluate $s"; python scripts/evaluate.py "$s"; cat result.json; echo "::endgroup::"
+          done

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://huggingface.co/datasets/calibench-vi/results/raw/main/schemas/result.schema.json",
+  "title": "Calibench leaderboard result record",
+  "description": "One evaluated leaderboard entry, PRODUCED BY CI after re-running the Calibench evaluation on a submission's outputs. Stored (one JSON object per record, or JSONL/Parquet) in calibench-vi/results; the leaderboard Space ranks these. Metrics are recomputed, never taken from the submitter.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "tool", "dataset", "verification", "metrics", "timestamp"],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "id": { "type": "string", "description": "unique: <tool>-<config>-<date>-<shorthash>" },
+    "tool": { "$ref": "submission.schema.json#/properties/tool" },
+    "dataset": { "$ref": "submission.schema.json#/properties/dataset" },
+    "submitter": { "$ref": "submission.schema.json#/properties/submitter" },
+    "verification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "method"],
+      "properties": {
+        "status": { "enum": ["verified", "self_reported", "failed"],
+          "description": "verified = CI recomputed the metrics; self_reported = metrics not re-run (e.g. manual import of a published baseline); failed = eval errored" },
+        "method": { "const": "re-run-eval" },
+        "calibench_eval_version": { "type": "string", "description": "pinned evaluation-harness version" },
+        "ci_run": { "type": "string", "format": "uri", "description": "link to the CI run that produced this" },
+        "notes": { "type": "string" }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Recomputed by the Calibench eval harness. 'simulation' present for split=simulation (errors vs held-out GT + consistency); 'real' present for split=real (GT-free). At least one required.",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "simulation": {
+          "type": "object",
+          "description": "error vs PRIVATE held-out ground truth + filter consistency (lower error / NEES≈1 is better)",
+          "properties": {
+            "cam_intrinsics_rmse": { "type": "number", "description": "RMSE over fx,fy,cx,cy,distortion (normalized)" },
+            "imu_intrinsics_rmse": { "type": "number", "description": "RMSE over scale/misalignment/g-sensitivity" },
+            "extr_rot_deg":   { "type": "number", "description": "cam-IMU rotation error (deg)" },
+            "extr_trans_mm":  { "type": "number", "description": "cam-IMU translation error (mm)" },
+            "time_offset_ms": { "type": "number", "description": "cam-IMU time-offset dt error (ms)" },
+            "rs_readout_ms":  { "type": "number", "description": "rolling-shutter readout error (ms)" },
+            "imu_imu_rot_deg":   { "type": "number" },
+            "imu_imu_trans_mm":  { "type": "number" },
+            "nees": { "type": "number", "description": "avg NEES / consistency (1.0 = consistent with reported covariance)" },
+            "score": { "type": "number", "description": "aggregate ranking score (lower = better)" }
+          }
+        },
+        "real": {
+          "type": "object",
+          "description": "GT-free metrics on real data (no absolute accuracy claim possible)",
+          "properties": {
+            "reproj_rmse_px":     { "type": "number", "description": "board reprojection RMSE (px)" },
+            "imu_residual":       { "type": "number", "description": "IMU pre-integration residual norm" },
+            "cross_tool_rot_deg": { "type": "number", "description": "rotation spread vs other tools on the same sequences" },
+            "cross_tool_trans_mm":{ "type": "number", "description": "translation spread vs other tools (mm)" },
+            "consistency":        { "type": "number", "description": "self-consistency across sequences" }
+          }
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "properties": {
+        "wall_clock_s": { "type": "number" },
+        "iterations": { "type": "integer" }
+      }
+    },
+    "calibration_ref": { "type": "string", "description": "link/path to the submitted output file for drill-down + reproducibility" },
+    "timestamp": { "type": "string", "format": "date-time" }
+  }
+}

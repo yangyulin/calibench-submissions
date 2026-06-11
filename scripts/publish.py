@@ -3,7 +3,9 @@
 
 Usage: HF_TOKEN=... python scripts/publish.py [result.json ...]
 Needs a Hugging Face token with WRITE access to the calibench-vi org.
-Records are stored per tool: <tool.name>/<file>.json (e.g. CamCalib/, Kalibr/).
+Records are stored per tool and batch: <tool.name>/<batch>/<file>.json
+(batch = record "batch" field, else its timestamp date) — so each leaderboard
+generation traces to a batch and the same tool is comparable across batches.
 """
 import json
 import os
@@ -24,10 +26,12 @@ def main(files):
     for f in files:
         name = pathlib.Path(f).name
         try:
-            tool = json.load(open(f)).get("tool", {}).get("name") or "unsorted"
+            r = json.load(open(f))
+            tool = r.get("tool", {}).get("name") or "unsorted"
+            batch = r.get("batch") or str(r.get("timestamp", ""))[:10] or "unbatched"
         except Exception:
-            tool = "unsorted"
-        dest = f"{tool}/{name}"
+            tool, batch = "unsorted", "unbatched"
+        dest = f"{tool}/{batch}/{name}"
         api.upload_file(path_or_fileobj=f, path_in_repo=dest,
                         repo_id=REPO, repo_type="dataset",
                         commit_message=f"add leaderboard result {dest}")

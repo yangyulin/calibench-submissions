@@ -3,7 +3,9 @@
 
 Usage: HF_TOKEN=... python scripts/publish.py [result.json ...]
 Needs a Hugging Face token with WRITE access to the calibench-vi org.
+Records are stored per tool: <tool.name>/<file>.json (e.g. CamCalib/, Kalibr/).
 """
+import json
 import os
 import pathlib
 import sys
@@ -21,10 +23,15 @@ def main(files):
     files = files or ["result.json"]
     for f in files:
         name = pathlib.Path(f).name
-        api.upload_file(path_or_fileobj=f, path_in_repo=name,
+        try:
+            tool = json.load(open(f)).get("tool", {}).get("name") or "unsorted"
+        except Exception:
+            tool = "unsorted"
+        dest = f"{tool}/{name}"
+        api.upload_file(path_or_fileobj=f, path_in_repo=dest,
                         repo_id=REPO, repo_type="dataset",
-                        commit_message=f"add leaderboard result {name}")
-        print(f"  published {name} -> {REPO}")
+                        commit_message=f"add leaderboard result {dest}")
+        print(f"  published {dest} -> {REPO}")
 
 
 if __name__ == "__main__":
